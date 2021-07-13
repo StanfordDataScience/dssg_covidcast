@@ -23,6 +23,8 @@ params:
     choices: [1,2,3,4]
     multiple: True
   printcode: TRUE
+editor_options: 
+  chunk_output_type: console
 ---
 
 **Package installation**
@@ -179,7 +181,7 @@ state_corrector <- zookeeper::make_state_corrector(
 
 Get the predictions for our forecaster (you can leave this call as-is, unless you want to change `incidence_period`):
 
-```{r state-predictions, results="hide", message=FALSE, warning=FALSE}
+```{r state-predictions, cache=TRUE, results="hide", message=FALSE, warning=FALSE}
 set.seed(111)  # for reproducibility as corrections have randomness
 state_predictions <-
   evalcast::get_predictions(
@@ -216,7 +218,7 @@ Get the competition and evaluate the predictions on the error metrics:
 ```
 
 
-```{r grab-the-competition}
+```{r grab-the-competition, cache=TRUE, }
 competition <- params$forecasters
 submitted <- lapply(competition[1:length(params$forecasters)], get_covidhub_predictions,
                     forecast_dates = forecast_dates,
@@ -244,7 +246,8 @@ all_predictions <- bind_rows(state_predictions, submitted)
 # for county prediction, set geo_type = "county"
 results <- evaluate_covid_predictions(all_predictions,
                                       backfill_buffer = 0,
-                                      geo_type = "state") %>%  intersect_averagers(c("forecaster"), c("forecast_date", "geo_value"))
+                                      geo_type = "state") 
+#%>%  intersect_averagers(c("forecaster"), c("forecast_date", "geo_value"))
 ```
 
 ## Overall AE, WIS, Coverage 80
@@ -280,28 +283,78 @@ plot_ae = plot_canonical(results, x = "ahead", y = "ae",aggr = mean) +
 
 ggplotly(plot_ae, tooltip="text") %>% layout(hoverlabel=list(bgcolor='white'))
 
-grid_wis = plot_canonical(results, x = "forecast_date", y = "wis", aggr = mean,
+plot_wis = plot_canonical(results, x = "forecast_date", y = "wis", aggr = mean,
                grp_vars = c("forecaster","ahead"), facet_rows = "ahead") + 
   labs(title = subtitle, x= "Forecast Dates", y = "Mean WIS") +
   theme(legend.position = "bottom", strip.background = element_rect(fill="white")) +
- coord_cartesian(ylim=c(0,50))
-#  theme_hc() +
-#  scale_colour_hc() +
-#  facet_wrap(~ahead, nrow = 2, labeller = labeller(ahead=facet.label))
+ coord_cartesian(ylim=c(0,50)) +
+    geom_point(aes(text=sprintf("Weeks Ahead: %s<br>Mean WIS: %s <br>Forecaster: %s", ahead, round(wis, digits =3),color)),alpha = 0.05)+
+  theme_bw(14)
 
-#horizontal graphs
-ggplotly(grid_wis) %>%
-layout(legend = list(orientation = "h", x = 0.5, y =0), hoverlabel=list(bgcolor="forecaster"))
+ggplotly(plot_wis, tooltip="text") %>% layout(legend = list(orientation = "h", x = -0.25, y =0), hoverlabel=list(bgcolor='white'))
 
 
-grid_cover = plot_canonical(results, x = "forecast_date", y = "coverage_80", aggr = mean,
+plot_cover = plot_canonical(results, x = "forecast_date", y = "coverage_80", aggr = mean,
                grp_vars = c("forecaster","ahead"), facet_rows = "ahead") +
   labs(subtitle = subtitle, xlab = "forecast date", ylab = "Mean Coverage") +
-  theme(legend.position = "bottom")  
+  theme(legend.position = "bottom")  +
 #  coord_cartesian(ylim=c(0,1)) + 
 #  geom_hline(yintercept = .8, color="black")+
+  geom_point(aes(text=sprintf("Weeks Ahead: %s<br>Coverage_80: %s <br>Forecaster: %s", ahead, round(coverage_80, digits =3),color)),alpha = 0.05)+
+  theme_bw(14)
 
-ggplotly(grid_cover)
+ggplotly(plot_cover, tooltip="text") %>% layout(hoverlabel=list(bgcolor='white'))
+
+```
+## Median relative WIS 
+
+Relative to baseline; scale first then take the median. 
+
+```{r, message = FALSE, warning = FALSE}
+wis_ahead = plot_canonical(results, x = "ahead", y = "wis", aggr = median,
+               base_forecaster = "COVIDhub-baseline", scale_before_aggr = TRUE) +
+  labs(subtitle = subtitle, xlab = "Weeks ahead", ylab = "Median relative WIS") +
+  theme(legend.position = "bottom") + 
+  geom_hline(yintercept = 1)
+
+
+wis_forecast_date = plot_canonical(results, x = "forecast_date", y = "wis", aggr = median,
+               grp_vars = c("forecaster", "ahead"), facet_rows = "ahead",
+               base_forecaster = "COVIDhub-baseline", scale_before_aggr = TRUE) +
+  labs(subtitle = subtitle, xlab = "Forecast date", ylab = "Median relative WIS") +
+  theme(legend.position = "bottom") + 
+  geom_hline(yintercept = 1)
+
+ggplotly(wis_ahead)
+ggplotly(wis_forecast_date)
+```
+
+## (Geometric) Mean relative WIS 
+
+Relative to baseline; scale first then take the geometric mean, ignoring a few 
+0's. I think this is potentially more useful than the median/mean for relative 
+WIS (or relative AE), but I haven't completely thought it through. 
+Putting the results here to be provocative.
+
+```{r}
+geom_mean <- function(x) prod(x)^(1/length(x))
+
+plot_canonical(results %>% filter(wis > 0), x = "ahead", y = "wis", 
+               aggr = geom_mean,
+               base_forecaster = "COVIDhub-baseline", scale_before_aggr = TRUE) + 
+  labs(subtitle = subtitle, 
+       xlab = "Weeks ahead", ylab = "Mean (geometric) relative WIS") +
+  theme(legend.position = "bottom") + 
+  geom_hline(yintercept = 1)
+
+plot_canonical(results %>% filter(wis > 0), x = "forecast_date", y = "wis", 
+               aggr = geom_mean, facet_rows = "ahead",
+               grp_vars = c("forecaster", "ahead"),
+               base_forecaster = "COVIDhub-baseline", scale_before_aggr = TRUE) +
+  theme(legend.position = "bottom") + 
+  labs(subtitle = subtitle, 
+       xlab = "Forecast date", ylab = "Mean (geometric) relative WIS") +
+  geom_hline(yintercept = 1)
 ```
 
 ```{r}
