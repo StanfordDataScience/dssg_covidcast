@@ -218,12 +218,16 @@ Get the competition and evaluate the predictions on the error metrics:
 ```
 
 
-```{r grab-the-competition, cache=TRUE, }
+```{r grab-the-competition, cache=TRUE}
 competition <- params$forecasters
+if (!"COVIDhub-baseline" %in% competition) {
+  competition[[length(competition)+1]] <- "COVIDhub-baseline"
+}
 submitted <- lapply(competition[1:length(params$forecasters)], get_covidhub_predictions,
                     forecast_dates = forecast_dates,
                     signal = "deaths_incidence_num",
                     ahead=aheads)
+
 # submitted[[4]] <- get_covidhub_predictions("Karlen-pypm",
 #                                            forecast_dates = forecast_dates - 1,
 #                                            signal = "deaths_incidence_num") %>%
@@ -355,6 +359,84 @@ plot_canonical(results %>% filter(wis > 0), x = "forecast_date", y = "wis",
   labs(subtitle = subtitle, 
        xlab = "Forecast date", ylab = "Mean (geometric) relative WIS") +
   geom_hline(yintercept = 1)
+```
+## Median relative WIS 
+
+Relative to baseline; scale first then take the median. 
+
+```{r, message = FALSE, warning = FALSE}
+wis_ahead = plot_canonical(results, x = "ahead", y = "wis", aggr = median,
+               base_forecaster = "COVIDhub-baseline", scale_before_aggr = TRUE) +
+  labs(subtitle = subtitle, xlab = "Weeks ahead", ylab = "Median relative WIS") +
+  theme(legend.position = "bottom") + 
+  geom_hline(yintercept = 1)
+
+
+wis_forecast_date = plot_canonical(results, x = "forecast_date", y = "wis", aggr = median,
+               grp_vars = c("forecaster", "ahead"), facet_rows = "ahead",
+               base_forecaster = "COVIDhub-baseline", scale_before_aggr = TRUE) +
+  labs(subtitle = subtitle, xlab = "Forecast date", ylab = "Median relative WIS") +
+  theme(legend.position = "bottom") + 
+  geom_hline(yintercept = 1)
+
+ggplotly(wis_ahead)
+ggplotly(wis_forecast_date)
+```
+
+## (Geometric) Mean relative WIS 
+
+Relative to baseline; scale first then take the geometric mean, ignoring a few 
+0's. I think this is potentially more useful than the median/mean for relative 
+WIS (or relative AE), but I haven't completely thought it through. 
+Putting the results here to be provocative.
+
+```{r}
+geom_mean <- function(x) prod(x)^(1/length(x))
+
+graph_geom_mean = 
+  plot_canonical(results %>% filter(wis > 0), x = "ahead", y = "wis", 
+               aggr = geom_mean,
+               base_forecaster = "COVIDhub-baseline", scale_before_aggr = TRUE) + 
+  labs(subtitle = subtitle, 
+       xlab = "Weeks ahead", ylab = "Mean (geometric) relative WIS") +
+  theme(legend.position = "bottom") + 
+  geom_hline(yintercept = 1)
+
+geom_wis =
+  plot_canonical(results %>% filter(wis > 0), x = "forecast_date", y = "wis", 
+               aggr = geom_mean, facet_rows = "ahead",
+               grp_vars = c("forecaster", "ahead"),
+               base_forecaster = "COVIDhub-baseline", scale_before_aggr = TRUE) +
+  theme(legend.position = "bottom") + 
+  labs(subtitle = subtitle, 
+       xlab = "Forecast date", ylab = "Mean (geometric) relative WIS") +
+  geom_hline(yintercept = 1)
+
+ggplotly(geom_mean)
+ggplotly(geom_wis)
+
+```
+
+## Scores by target date (not forecast date)
+
+```{r}
+target_wis =
+  plot_canonical(results, x = "target_end_date", y = "wis", aggr = mean,
+               dots = TRUE, grp_vars = "forecaster") + 
+  labs(subtitle = subtitle, xlab = "Target date", ylab = "Mean WIS") +
+  theme(legend.position = "bottom") + 
+  scale_y_log10()
+
+target_wis_ahead =
+  plot_canonical(results, x = "target_end_date", y = "wis", aggr = mean,
+               dots = TRUE, grp_vars = c("forecaster", "ahead"), 
+               facet_cols = "ahead") +
+  labs(subtitle = subtitle, xlab = "Target date", ylab = "Mean WIS") +
+  theme(legend.position = "bottom") + 
+  scale_y_log10()
+
+ggplotly(target_wis)
+ggplotly(target_wis_ahead)
 ```
 
 ```{r}
