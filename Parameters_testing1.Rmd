@@ -84,8 +84,6 @@ The code below is an example of what these arguments might be.
 
 ```{r}
 aheads  <- as.numeric(params$weeks)
-aheads
-#1:4
 lags <- c(0, 7, 14)
 state_forecaster <- larrys_anteater
 state_forecaster_name  <- "larry's anteater"
@@ -222,14 +220,28 @@ Get the competition and evaluate the predictions on the error metrics:
 
 
 ```{r grab-the-competition}
+
 competition <- params$forecasters
+
+if ("Karlen-pypm" %in% competition) {
+  competition <- competition[-which(competition == "Karlen-pypm")]
+}
+
 if (!"COVIDhub-baseline" %in% competition) {
   competition[[length(competition)+1]] <- "COVIDhub-baseline"
 }
+
 submitted <- lapply(competition[1:length(params$forecasters)], get_covidhub_predictions,
                     forecast_dates = forecast_dates,
                     signal = "deaths_incidence_num",
-                    ahead=aheads)
+                    ahead = aheads)
+
+if ("Karlen-pypm" %in% params$forecasters) {
+  submitted[length(params$forecasters)] <- get_covidhub_predictions("Karlen-pypm", 
+                                           forecast_dates = forecast_dates - 1,
+                                           signal = "deaths_incidence_num") %>%
+  mutate(forecast_date = forecast_date + 1)
+}
 ```
 
 ```{r combine-predictions}
@@ -272,6 +284,9 @@ unique(results$forecaster)
 ```
 
 ```{r overall}
+facet.label = c("1 week ahead", "2 weeks ahead", "3 weeks ahead", "4 weeks ahead")
+names(facet.label) = c(1, 2, 3, 4)
+
 subtitle = sprintf("Forecasts made over %s to %s",
                    format(min(forecast_dates), "%B %d, %Y"),
                    format(max(forecast_dates), "%B %d, %Y"))
@@ -283,17 +298,18 @@ plot_ae = plot_canonical(results, x = "ahead", y = "ae",aggr = mean) +
   labs(color='Forecasters') +  
 #  coord_cartesian(ylim=c(0,100))+
   geom_point(aes(text=sprintf("Weeks Ahead: %s<br>Average Error: %s <br>Forecaster: %s", ahead, round(ae, digits =3),color)),alpha = 0.05)+
-  theme_bw(14)
+  theme_bw()
 
 ggplotly(plot_ae, tooltip="text") %>% layout(hoverlabel=list(bgcolor='white'))
 
 plot_wis = plot_canonical(results, x = "forecast_date", y = "wis", aggr = mean,
                grp_vars = c("forecaster","ahead"), facet_rows = "ahead") + 
   labs(title = subtitle, x= "Forecast Dates", y = "Mean WIS") +
-  theme(legend.position = "bottom", strip.background = element_rect(fill="white")) +
+  theme(legend.position = "bottom", strip.background = element_blank()) +
  coord_cartesian(ylim=c(0,50)) +
     geom_point(aes(text=sprintf("Forecast Date: %s<br>Mean WIS: %s <br>Forecaster: %s", forecast_date, round(wis, digits =3),color)),alpha = 0.05)+
-  theme_bw(14)
+  theme_bw() +
+  facet_wrap(~ahead, nrow = 4, labeller = labeller(ahead=facet.label))
 
 ggplotly(plot_wis, tooltip="text") %>% layout(hoverlabel=list(bgcolor='white'))
 
@@ -301,11 +317,14 @@ ggplotly(plot_wis, tooltip="text") %>% layout(hoverlabel=list(bgcolor='white'))
 plot_cover = plot_canonical(results, x = "forecast_date", y = "coverage_80", aggr = mean,
                grp_vars = c("forecaster","ahead"), facet_rows = "ahead") +
   labs(subtitle = subtitle, xlab = "forecast date", ylab = "Mean Coverage") +
-  theme(legend.position = "bottom")  +
+  theme(legend.position = "bottom",
+        strip.background = element_rect(fill="white"))  +
 #  coord_cartesian(ylim=c(0,1)) + 
 #  geom_hline(yintercept = .8, color="black")+
     geom_point(aes(text=sprintf("Forecast Date: %s<br>Mean WIS: %s <br>Forecaster: %s", forecast_date, round(coverage_80, digits =3),color)),alpha = 0.05)+
-  theme_bw(14)
+  theme_bw() +
+  facet_wrap(~ahead, nrow = 4, labeller = labeller(ahead=facet.label))
+  
 
 ggplotly(plot_cover, tooltip="text") %>% layout(hoverlabel=list(bgcolor='white'))
 
@@ -321,7 +340,7 @@ median_wis <- plot_canonical(results, x = "ahead", y = "wis", aggr = median,
   theme(legend.position = "bottom") + 
   geom_hline(yintercept = 1)  +
   geom_point(aes(text=sprintf("Weeks Ahead: %s<br>WIS: %s <br>Forecaster: %s", ahead, round(wis, digits =3),color)),alpha = 0.05)+
-  theme_bw(14)
+  theme_bw()
 
 ggplotly(median_wis, tooltip="text") %>% layout(hoverlabel=list(bgcolor='white'))
 
@@ -332,7 +351,8 @@ median_wis_forecast_date <- plot_canonical(results, x = "forecast_date", y = "wi
   theme(legend.position = "bottom") + 
   geom_hline(yintercept = 1)  +
   geom_point(aes(text=sprintf("Forecast Date: %s<br>WIS: %s <br>Forecaster: %s", forecast_date, round(wis, digits=3),color)),alpha = 0.05)+
-  theme_bw(14)
+  theme_bw() +
+  facet_wrap(~ahead, nrow = 4, labeller = labeller(ahead=facet.label))
 
 ggplotly(median_wis_forecast_date, tooltip="text") %>% layout(hoverlabel=list(bgcolor='white'))
 ```
@@ -356,7 +376,7 @@ mean_wis =
   theme(legend.position = "bottom") + 
   geom_hline(yintercept = 1) +
   geom_point(aes(text=sprintf("Weeks Ahead: %s<br>WIS: %s <br>Forecaster: %s", ahead, round(wis, digits =3),color)),alpha = 0.05)+
-  theme_bw(14)
+  theme_bw()
 
 ggplotly(mean_wis, tooltip="text") %>% layout(hoverlabel=list(bgcolor='white'))
 
@@ -371,7 +391,9 @@ plot_canonical(results %>% filter(wis > 0), x = "forecast_date", y = "wis",
        xlab = "Forecast date", ylab = "Mean (geometric) relative WIS") +
   geom_hline(yintercept = 1) +
   geom_point(aes(text=sprintf("Forecast Date: %s<br>WIS: %s <br>Forecaster: %s", forecast_date, round(wis, digits =3),color)),alpha = 0.05)+
-  theme_bw(14)
+  theme_bw() +
+  facet_wrap(~ahead, nrow = 4, labeller = labeller(ahead=facet.label))
+  
 
 ggplotly(mean_wis_forecast_date, tooltip="text") %>% layout(hoverlabel=list(bgcolor='white'))
 ```
@@ -383,20 +405,22 @@ target_wis =
   plot_canonical(results, x = "target_end_date", y = "wis", aggr = mean,
                dots = TRUE, grp_vars = "forecaster") + 
   labs(subtitle = subtitle, xlab = "Target date", ylab = "Mean WIS") +
-  theme(legend.position = "bottom") + 
+  theme(legend.position = "bottom", strip.background = element_rect(fill = "white")) + 
   scale_y_log10() +
   geom_point(aes(text=sprintf("Target End Date: %s<br>WIS: %s <br>Forecaster: %s", target_end_date, round(wis, digits =3),color)),alpha = 0.05)+
-  theme_bw(14)
+  theme_bw()
 
 target_wis_ahead =
   plot_canonical(results, x = "target_end_date", y = "wis", aggr = mean,
                dots = TRUE, grp_vars = c("forecaster", "ahead"), 
                facet_rows = "ahead") +
   labs(subtitle = subtitle, xlab = "Target date", ylab = "Mean WIS") +
-  theme(legend.position = "bottom") + 
+  theme(legend.position = "bottom", strip.background = element_rect(fill = "white")) + 
   scale_y_log10() +
   geom_point(aes(text=sprintf("Target End Date: %s<br>WIS: %s <br>Forecaster: %s", target_end_date, round(wis, digits =3),color)),alpha = 0.05)+
-  theme_bw(14)
+  theme_bw() +
+  facet_wrap(~ahead, nrow = 4, labeller = labeller(ahead=facet.label))
+  
 
 ggplotly(target_wis, tooltip="text") %>% layout(hoverlabel=list(bgcolor='white'))
 ggplotly(target_wis_ahead, tooltip="text") %>% layout(hoverlabel=list(bgcolor='white'))
@@ -512,7 +536,7 @@ g <- g +
              mapping = aes(y = value, color = forecaster),
              size = 3) +
   scale_color_viridis_d(begin=.15, end=.85)
-g<- g + theme_bw(base_size = 20) + 
+g<- g + theme_bw() + 
   facet_wrap(~geo_value, scales = "free_y", ncol = 5) +
   theme(legend.position = "top") + ylab("") + xlab("")
 

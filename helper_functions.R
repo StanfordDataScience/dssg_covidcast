@@ -18,4 +18,3 @@ set_params  <- function(template_file, choices_weeks, choices_forecasters) {
 set_params(template_file = "Parameters_testing1.Rmd", 
            choices_weeks = "[5, 6, 7, 8]",
            choices_forecasters = "[CMU-TimeSeries, Karlen-pypm]")
-
