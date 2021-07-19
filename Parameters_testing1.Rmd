@@ -7,12 +7,12 @@ params:
   forecasters:
     label: "Forecasters:"
     choices: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm,CU-select, Google_Harvard-CPF, MIT-Cassandra]
-    value: COVIDhub-ensemble
+    value: [COVIDhub-ensemble, COVIDhub-baseline]
     input: select
     multiple: True
   weeks: 
     label: "Weeks"
-    value: 1
+    value: [1,2,3,4]
     input: select
     choices: [1,2,3,4]
     multiple: True
@@ -26,7 +26,7 @@ editor_options:
 
 ```{r common-stuff, echo=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(autodep = TRUE, fig.align = "center", message = FALSE, warning = FALSE, echo=params$printcode)
-
+library(assertthat)
 library(covidcast)
 library(evalcast)
 library(modeltools)
