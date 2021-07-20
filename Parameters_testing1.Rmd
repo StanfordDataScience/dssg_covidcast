@@ -7,7 +7,7 @@ params:
   forecasters:
     label: "Forecasters:"
     choices: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm,CU-select, Google_Harvard-CPF, MIT-Cassandra]
-    value: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm,CU-select, Google_Harvard-CPF, MIT-Cassandra]
+    value: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm, CU-select]
     input: select
     multiple: True
   weeks: 
@@ -290,7 +290,7 @@ plot_wis = plot_canonical(results, x = "forecast_date", y = "wis", aggr = mean,
     geom_point(aes(text=sprintf("Forecast Date: %s<br>Mean WIS: %s <br>Forecaster: %s", forecast_date, round(wis, digits =3),color)),alpha = 0.05)+
   facet_wrap(~ahead, nrow = 4, labeller = labeller(ahead=facet.label)) +
   theme_bw()+
-    theme(strip.background = element_rect(fill = "white")) 
+    theme(strip.background = element_rect(fill = "white"))
 
 ggplotly(plot_wis, tooltip="text", height=800, width= 1200) %>% layout(hoverlabel=list(bgcolor='white'))
 
@@ -448,6 +448,10 @@ For county predictions, you might want to change the `fig.height` and `fig.width
 
 ```{r state trajectories, fig.height = 60, fig.width = 20, dev="CairoSVG"}
 # for county prediction, set geo_type = "county"
+
+facet.label = c(state.name, "Washington D.C.", "Porto Rico")
+names(facet.label) = c(tolower(state.abb), "dc", "pr")
+
 pd <- evalcast:::setup_plot_trajectory(
   bind_rows(state_predictions, submitted %>% filter(forecaster == "CMU-TimeSeries")),
   intervals = 0.8,
@@ -458,31 +462,29 @@ g <- ggplot(pd$truth_df, mapping = aes(x = target_end_date))
 g <- g + geom_ribbon(
   data = pd$quantiles_df,
   mapping = aes(ymin = lower, ymax = upper, fill = forecaster, 
-                group = interaction(forecaster,forecast_date)),
+                group = interaction(forecaster, forecast_date)),
   alpha = .1) +
   scale_fill_viridis_d(begin=.15, end=.85)
 # line layer
 g <- g +
   #geom_line(aes(y = .data$value.y), color = "#3182BD") + # corrected
-  geom_line(aes(y = value)) + # reported
+  geom_line(aes(y = value), size = .5) + # reported
   geom_line(data = pd$points_df, 
-            mapping = aes(y = value, color = forecaster, 
-                          group = interaction(forecaster,forecast_date)),
-            size = 1) +
-  geom_point(aes(y = value)) + # reported gets dots
+            mapping = aes(y = value, color = forecaster, group = interaction(forecaster, forecast_date)), size = .5) +
+  geom_point(aes(y = value), size = 1) + # reported gets dots
   geom_point(data = pd$points_df, 
              mapping = aes(y = value, color = forecaster),
-             size = 3) +
+             size = 1) +
   scale_color_viridis_d(begin=.15, end=.85)
 
 states <-
   g  + 
-  facet_wrap(~geo_value, scales = "free_y", ncol = 3) +
-  theme(legend.position = "top") + ylab("") + xlab("")+
-  theme_bw()+
-  theme(legend.position = "bottom", strip.background = element_rect(fill = "white")) 
+  facet_wrap(~geo_value, scales = "free_y", ncol = 3, labeller = labeller(geo_value=facet.label)) + 
+  ylab("") + xlab("") +
+  theme_bw() + theme(legend.position = "none", strip.background = element_rect(fill = "white"))
+  
 
-ggplotly(states,height=2500, width= 1200)
+ggplotly(states, height=2500, width= 1200)
 ```
 
 
