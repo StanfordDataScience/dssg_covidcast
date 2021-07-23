@@ -6,8 +6,8 @@ output:
 params:
   forecasters:
     label: "Forecasters:"
-    choices: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm,CU-select, Google_Harvard-CPF, MIT-Cassandra]
-    value: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm, CU-select, MIT-Cassandra]
+    choices: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm,CU-select, Google_Harvard-CPF, MIT-Cassandra, COVIDhub-trained_ensemble]
+    value: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm, CU-select, MIT-Cassandra, COVIDhub-trained_ensemble]
     input: select
     multiple: TRUE
   colorblind_palette: TRUE
