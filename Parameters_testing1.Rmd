@@ -37,6 +37,7 @@ library(namespace)
 #library(devtools)
 #library(usethis)
 library(assertthat)  # needed for this particular forecaster
+library(downloadthis)
 library(sf)
 library(Cairo)
 library(tidyverse)
@@ -481,9 +482,9 @@ For county predictions, you might want to change the `fig.height` and `fig.width
 state.label = c(state.name, "Washington D.C.", "Porto Rico")
 names(state.label) = c(tolower(state.abb), "dc", "pr")
 
+# trajectory plots for selected forecaster
 pd <- evalcast:::setup_plot_trajectory(
-  bind_rows(state_predictions, submitted %>% 
-              filter(forecaster == "CMU-TimeSeries")),
+  submitted %>% filter(forecaster == "CMU-TimeSeries"),
   intervals = 0.8,
   geo_type = "state",
   start_day = min(forecast_dates) - 60)
@@ -530,5 +531,19 @@ states <- g  +
 
 ggplotly(states, height=5000, width= 1000)
 ```
+---
+## Downloading the data
 
+Retrieving prediction data of the selected forecasters
 
+```{r download data}
+# all_predictions %>%
+#   download_this(
+#     output_name = "all_predictions",
+#     output_extension = ".csv",
+#     button_label = "Download Predictions",
+#     button_type = "success",
+#     has_icon = TRUE,
+#     icon = "fa fa-save"
+#   )
+```
