@@ -57,13 +57,13 @@ library(here)
 
 url1 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_state_deaths.rds"
 download.file(url1, "eval_deaths.RDS") # download to disk
-scores2 <- readRDS(paste0(here(), "/eval_deaths.RDS"))
-scores3 <- subset(scores2,  forecaster %in% params$forecasters)
+scores <- readRDS(paste0(here(), "/eval_deaths.RDS"))
+scores <- subset(scores,  forecaster %in% params$forecasters)
 ```
 
 ```{r get-forecast-dates}
 our_pred_dates <- 
-  scores3 %>%
+  scores %>%
   filter(forecaster == "CMU-TimeSeries") 
 
 our_pred_dates <- unique(our_pred_dates$forecast_date) 
@@ -76,15 +76,17 @@ forecast_dates <- our_pred_dates[n_dates- 2 *5:2]
 
 
 ```{r}
-scores3$forecast_date <- 
-  if_else(scores3$forecaster %in% c("Karlen-pypm", "CU-select"), scores3$forecast_date + 1, scores3$forecast_date)
+scores$forecast_date <- 
+  if_else(scores$forecaster %in% c("Karlen-pypm", "CU-select"), scores$forecast_date + 1, scores$forecast_date)
 
-scores3 <- subset(scores3, forecast_date %in% forecast_dates)
-results <- intersect_averagers(scores3, c("forecaster"), c("forecast_date", "geo_value"))
+scores <- subset(scores, forecast_date %in% forecast_dates)
+results <- intersect_averagers(scores, c("forecaster"), c("forecast_date", "geo_value")) %>%
+  select(c("ahead", "geo_value", "forecaster","forecast_date", "data_source", "signal","target_end_date","incidence_period","actual","wis","ae","cov_80"))
 
 results %>%
   group_by(forecast_date) %>%
   summarise(n_distinct(geo_value))
+
 ```
 
 <!-- ```{r evaluate-predictions, messages=F, warning=F} -->
@@ -163,31 +165,31 @@ if (params$colorblind_palette) {
 ggplotly(plot_wis, tooltip="text", height=800, width= 1000) %>% 
   layout(hoverlabel = list(bgcolor = "white"))
 
-plot_cover <-
+plot_cov80 <-
   plot_canonical(results, 
                  x = "forecast_date", 
-                 y = "value_80", 
+                 y = "cov_80", 
                  aggr = mean,
                  grp_vars = c("forecaster","ahead"), 
                  facet_rows = "ahead") +
   labs(title = subtitle, x= "Forecast date", y = "Mean Coverage 80", color='Forecasters') +
   geom_point(aes(text = sprintf("Forecast Date: %s<br>Coverage: %s <br>Forecaster: %s", 
                                 forecast_date, 
-                                round(value_80, digits = 2),
+                                round(cov_80, digits = 2),
                                 color)),
              alpha = 0.05) +
   facet_wrap(~ahead, nrow = 4, labeller = labeller(ahead = weeks.label)) +
   theme(strip.background = element_rect(fill = "white")) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = "center")) +
-  geom_line(mapping = aes(y = .8))
+  geom_line(mapping = aes(y = .8), )
 
 if (params$colorblind_palette) {
-  plot_cover <- plot_cover + 
+  plot_cov80 <- plot_cov80 + 
     scale_color_viridis_d()
 }
 
-ggplotly(plot_cover, tooltip="text", height=800, width=1000) %>% 
+ggplotly(plot_cov80, tooltip="text", height=800, width=1000) %>% 
   layout(hoverlabel = list(bgcolor = "white"))
 ```
 
@@ -303,10 +305,10 @@ Note that the results are scaled by population.
 library(sf)
 maps <- results %>%
   group_by(geo_value, forecaster) %>%
-  summarise(across(wis:ae, mean)) %>%
+  summarise(across(wis:cov_80, mean)) %>%
   left_join(animalia::state_population, by = "geo_value") %>%
-  mutate(across(wis:ae, ~ .x / population * 1e5)) %>%
-  pivot_longer(wis:ae, names_to = "score") %>%
+  mutate(across(wis:cov_80, ~ .x / population * 1e5)) %>%
+  pivot_longer(wis:cov_80, names_to = "score") %>%
   group_by(score) %>%
   mutate(time_value = Sys.Date(),
          r = max(value)) %>%
@@ -334,10 +336,15 @@ nfcasts <- length(unique(results$forecaster))
 cowplot::plot_grid(plotlist = maps[1:nfcasts], ncol = 3)
 ```
 
+### Mean Coverage_80
+
+```{r map-cov80, fig.width=12, fig.height=8}
+cowplot::plot_grid(plotlist = maps[(nfcasts+1):(nfcasts*2)], ncol = 3)
+```
 ### Mean WIS
 
 ```{r map-wis, fig.width=12, fig.height=8}
-cowplot::plot_grid(plotlist = maps[(nfcasts+1):length(maps)], ncol = 3)
+cowplot::plot_grid(plotlist = maps[((nfcasts*2)+1):length(maps)], ncol = 3)
 ```
 
 ## Trajectory plots
