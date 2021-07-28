@@ -35,6 +35,7 @@ library(zookeeper)
 library(namespace)
 #library(devtools)
 #library(usethis)
+library(downloadthis)
 library(assertthat)  # needed for this particular forecaster
 library(sf)
 library(Cairo)
@@ -84,6 +85,23 @@ results %>%
   group_by(forecast_date) %>%
   summarise(n_distinct(geo_value))
 
+```
+
+## Downloading the data
+
+Retrieving prediction data of the selected forecasters
+
+```{r download data}
+results %>%
+  download_this(
+    output_name = "results",
+    output_extension = ".csv",
+    button_label = "Download Predictions Evaluation",
+    button_type = "success",
+    has_icon = TRUE,
+    csv2 = FALSE,
+    icon = "fa fa-save"
+  )
 ```
 
 <!-- ```{r evaluate-predictions, messages=F, warning=F} -->
@@ -402,9 +420,73 @@ Work In Progress
 <!-- ggplotly(states, height=5000, width= 1000) -->
 <!-- ``` -->
 
-<!-- ```{r} -->
-<!-- options(timeout=200) -->
-<!-- url2 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/predictions_cards.rds" -->
-<!-- download.file(url2, "test.RDS") # download to disk -->
-<!-- state_predictions <- readRDS(paste0(here(), "/test.RDS")) -->
-<!-- ``` -->
+```{r get_predictions}
+options(timeout=200)
+url4 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/predictions_cards.rds"
+download.file(url4, "predictions.RDS") # download to disk
+state_predictions <- readRDS(paste0(here(), "/predictions.RDS"))
+
+
+# Check how many aheads in the state_predictions data
+# Check the forecast_end_date column
+```
+
+## Trajectory plots
+
+For county predictions, you might want to change the `fig.height` and `fig.width` chunk options here (in other notebooks we use `fig.height = 120` and `fig.width = 30`).
+
+```{r}
+# for county prediction, set geo_type = "county"
+state.label = c(state.name, "Washington D.C.", "Porto Rico")
+names(state.label) = c(tolower(state.abb), "dc", "pr")
+
+# trajectory plots for selected forecaster
+pd <- evalcast:::setup_plot_trajectory(
+  state_predictions %>% filter(forecaster == "CMU-TimeSeries" & forecast_date %in% forecast_dates),
+  intervals = 0.8,
+  geo_type = "state",
+  start_day = min(forecast_dates) - 60)
+
+g <- ggplot(pd$truth_df, mapping = aes(x = target_end_date))
+# build the fan
+g <- g + geom_ribbon(
+  data = pd$quantiles_df %>%
+    mutate(upper = round(upper, 2),
+           lower = round(lower, 2)),
+  mapping = aes(ymin = lower, 
+                ymax = upper, 
+                fill = forecaster,
+                group = interaction(forecaster, forecast_date)),
+  alpha = .1) +
+  scale_fill_viridis_d(begin=.15, end=.85)
+
+# line layer
+g <- g +
+  #geom_line(aes(y = .data$value.y), color = "#3182BD") + # corrected
+  geom_line(aes(y = value), size = .5) + # reported
+  geom_line(data = pd$points_df,
+            mapping = aes(y = value,
+                          color = forecaster, 
+                          group = interaction(forecaster, forecast_date)), 
+            size = .5) +
+  geom_point(aes(y = value), size = 1) + # reported gets dots
+  geom_point(data = pd$points_df %>%
+               mutate(value = round(value, 2)),
+             mapping = aes(y = value, color = forecaster),
+             size = 1) +
+  scale_color_viridis_d(begin=.15, end=.85)
+```
+
+
+```{r state trajectories, fig.height = 60, fig.width = 20, dev="CairoSVG"}
+states <- g  +
+  facet_wrap(~geo_value, 
+             scales = "free_y", 
+             ncol = 3, 
+             labeller = labeller(geo_value = state.label)) +
+  labs(x = "", y = "") +
+  theme_bw() + 
+  theme(legend.position = "none", strip.background = element_rect(fill = "white"))
+
+ggplotly(states, height=5000, width= 1000)
+```
