@@ -10,6 +10,16 @@ params:
     value: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm, CU-select, MIT-Cassandra, COVIDhub-trained_ensemble]
     input: select
     multiple: TRUE
+  primary_forecaster:
+    label: "Primary forecaster:"
+    choices: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm,CU-select, Google_Harvard-CPF, MIT-Cassandra, COVIDhub-trained_ensemble]
+    value: CMU-TimeSeries
+    input: select
+  outcome:
+    label: "Outcome:"
+    choices: [cases, deaths, hospitalizations]
+    value: cases
+    input: select
   colorblind_palette: TRUE
   weeks: 
     label: "Weeks"
@@ -47,16 +57,30 @@ library(here)
 ```
 
 ```{r}
-##This is for the cases:
-# url2 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_nation_cases.rds"
-# download.file(url2, "eval_cases.RDS") # download to disk
-# scores <- readRDS(paste0(here(), "/eval_cases.RDS"))
-#scores_total <- rbind(scores,scores2)
 
+if(params$outcome=="cases") {
+#This is for the cases:
+url2 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_nation_cases.rds"
+download.file(url2, "eval_cases.RDS") # download to disk
+scores <- readRDS(paste0(here(), "/eval_cases.RDS"))
+scores <- subset(scores,  forecaster %in% params$forecasters)
+}
+
+if(params$outcome=="deaths"){
 url1 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_state_deaths.rds"
 download.file(url1, "eval_deaths.RDS") # download to disk
 scores <- readRDS(paste0(here(), "/eval_deaths.RDS"))
 scores <- subset(scores,  forecaster %in% params$forecasters)
+}
+
+if(params$outcome=="hospitalizations"){
+url1 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_state_hospitalizations.rds"
+download.file(url1, "eval_hospitalizations.RDS") # download to disk
+scores <- readRDS(paste0(here(), "/eval_hospitalizations.RDS"))
+scores <- subset(scores,  forecaster %in% params$forecasters)
+}
+
+primary_forecaster <- params$primary_forecaster
 ```
 
 ```{r get-forecast-dates}
@@ -442,7 +466,7 @@ names(state.label) = c(tolower(state.abb), "dc", "pr")
 
 # trajectory plots for selected forecaster
 pd <- evalcast:::setup_plot_trajectory(
-  state_predictions %>% filter(forecaster == "CMU-TimeSeries" & forecast_date %in% forecast_dates),
+  state_predictions %>% filter(forecaster=="CMU-TimeSeries" & forecast_date %in% forecast_dates),
   intervals = 0.8,
   geo_type = "state",
   start_day = min(forecast_dates) - 60)
