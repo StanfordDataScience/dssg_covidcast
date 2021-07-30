@@ -374,7 +374,7 @@ nfcasts <- length(unique(results$forecaster))
 cowplot::plot_grid(plotlist = maps[1:nfcasts], ncol = 3)
 ```
 
-### Mean Coverage_80
+### Mean Coverage 80
 
 ```{r map-cov80, fig.width=12, fig.height=8}
 cowplot::plot_grid(plotlist = maps[(nfcasts+1):(nfcasts*2)], ncol = 3)
