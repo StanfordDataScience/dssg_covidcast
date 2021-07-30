@@ -334,8 +334,8 @@ ggplotly(mean_wis_forecast_date, tooltip = "text", height=800, width= 1000) %>%
 # ggplotly(target_wis_ahead, tooltip="text", height=800, width= 1000) %>% layout(hoverlabel=list(bgcolor='white'))
 ```
 
-## Maps (mean score over forecast dates and aheads)
-
+## Maps {.tabset}
+mean score over forecast dates and aheads
 Note that the results are scaled by population.
 
 ```{r maps-processing, warning=FALSE}
