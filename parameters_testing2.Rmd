@@ -141,10 +141,11 @@ results %>%
 <!--   summarise(n_distinct(geo_value)) -->
 <!-- ``` -->
 
-## Overall AE, WIS, Coverage 80
+## Overall AE, WIS, Coverage 80 {.tabset}
 NOTE: Results are based on the following numbers of common locations
 
-```{r overall}
+### Overall Absolute Error
+```{r overall ae}
 weeks.label = c("1 week ahead", "2 weeks ahead", "3 weeks ahead", "4 weeks ahead")
 names(weeks.label) = c(1, 2, 3, 4)
 
@@ -175,6 +176,10 @@ if (params$colorblind_palette) {
 ggplotly(plot_ae, tooltip="text", width=1000) %>% 
   layout(hoverlabel = list(bgcolor = "white"))
 
+```
+
+### Overall Weighted Interval Score
+``` {r overall wis}
 plot_wis <-
   plot_canonical(results, 
                  x = "forecast_date", 
@@ -204,7 +209,10 @@ if (params$colorblind_palette) {
 
 ggplotly(plot_wis, tooltip="text", height=800, width= 1000) %>% 
   layout(hoverlabel = list(bgcolor = "white"))
+```
 
+### Overall Coverage 80
+``` {r overall coverage80}
 plot_cov80 <-
   plot_canonical(results, 
                  x = "forecast_date", 
@@ -232,7 +240,6 @@ if (params$colorblind_palette) {
 ggplotly(plot_cov80, tooltip="text", height=800, width=1000) %>% 
   layout(hoverlabel = list(bgcolor = "white"))
 ```
-
 
 ## (Geometric) Mean relative WIS 
 
