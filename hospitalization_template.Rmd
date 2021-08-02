@@ -30,7 +30,6 @@ editor_options:
 **Package installation**
 ```{r common-stuff, echo=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(autodep = TRUE, fig.align = "center", message = FALSE, warning = FALSE, echo=params$printcode)
-source("revised_larry.R")
 library(covidcast)
 library(evalcast)
 library(modeltools)
