@@ -7,7 +7,7 @@ params:
   forecasters:
     label: "Forecasters:"
     choices: [Covid19Sim-Simulator, CovidActNow-SEIR_CAN, COVIDhub-ensemble, COVIDhub-trained_ensemble, CU-select, Google_Harvard-CPF, GT-DeepCOVID, IHME-CurveFit, JHU_IDD-CovidSP, JHUAPL-Bucky, JHUAPL-Gecko, JHUAPL-SLPHospEns, Karlen-pypm, LANL-GrowthRate, MOBS-GLEAM_COVID, UCLA-SuEIR, UCSB-ACTS, USACE-ERDC_SEIR, USC-SI_kJalpha]
-    value: [COVIDhub-ensemble, COVIDhub-trained_ensemble, Google_Harvard-CPF, CU-select, Karlen-pypm]
+    value: [Covid19Sim-Simulator, COVIDhub-ensemble, COVIDhub-trained_ensemble, CU-select, Google_Harvard-CPF, JHU_IDD-CovidSP, Karlen-pypm]
     input: select
     multiple: TRUE
   primary_forecaster:
@@ -24,7 +24,7 @@ params:
     multiple: True
   printcode: TRUE
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 **Package installation**
@@ -76,13 +76,15 @@ forecast_dates <- our_pred_dates[n_dates- 2 *5:2]
 
 
 ```{r}
+unique(scores$forecaster)
+scores %>%
+  filter(forecaster =="Karlen-pypm")
+
 scores$forecast_date <- 
-  if_else(scores$forecaster %in% c("Karlen-pypm", "CU-select"), scores$forecast_date + 1, scores$forecast_date)
-unique(scores$ahead)
+  if_else(scores$forecaster %in% c("Karlen-pypm", "CU-select","Covid19Sim-Simulator","JHU_IDD-CovidSP"), scores$forecast_date + 1, scores$forecast_date)
 
 scores <- subset(scores, forecast_date %in% forecast_dates & ahead <= aheads)
 results <- 
-  #intersect_averagers(scores, c("forecaster"), c("forecast_date", "geo_value")) %>%
   scores %>% 
   select(c("ahead", "geo_value", "forecaster","forecast_date", "data_source", "signal","target_end_date","incidence_period","actual","wis","ae","cov_80"))
 
@@ -90,6 +92,7 @@ results %>%
   group_by(forecast_date) %>%
   summarise(n_distinct(geo_value))
 
+unique(results$forecaster)
 ```
 
 ## Downloading the data
@@ -216,7 +219,7 @@ mean_wis <-
                  x = "ahead", 
                  y = "wis", 
                  aggr = geom_mean,
-                 base_forecaster = "COVIDhub-ensemble", 
+                 base_forecaster = "COVIDhub-trained_ensemble", 
                  scale_before_aggr = TRUE) + 
   labs(title = subtitle, 
        x = "Weeks Ahead", 
@@ -346,7 +349,7 @@ nfcasts <- length(unique(results$forecaster))
 cowplot::plot_grid(plotlist = maps[1:nfcasts], ncol = 3)
 ```
 
-### Mean Coverage_80
+### Mean Coverage 80
 
 ```{r map-cov80, fig.width=12, fig.height=8}
 cowplot::plot_grid(plotlist = maps[(nfcasts+1):(nfcasts*2)], ncol = 3)
