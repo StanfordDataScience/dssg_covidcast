@@ -35,7 +35,6 @@ editor_options:
 **Package installation**
 ```{r common-stuff, echo=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(autodep = TRUE, fig.align = "center", message = FALSE, warning = FALSE, echo=params$printcode)
-source("revised_larry.R")
 library(covidcast)
 library(evalcast)
 library(modeltools)
@@ -56,38 +55,31 @@ library(plotly)
 library(here)
 ```
 
-```{r}
+```{r, results = FALSE}
 aheads  <- as.numeric(params$weeks)
 
-if(params$outcome=="cases") {
-#This is for the cases:
-url_case <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_state_cases.rds"
-download.file(url_case, "eval_cases.RDS") # download to disk
-scores <- readRDS(paste0(here(), "/eval_cases.RDS"))
-scores <- subset(scores,  forecaster %in% params$forecasters)
-}
+# if(params$outcome=="cases") {
+# #This is for the cases:
+# url_case <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_state_cases.rds"
+# download.file(url_case, "eval_cases.RDS") # download to disk
+# scores <- readRDS(paste0(here(), "/eval_cases.RDS"))
+# scores <- subset(scores,  forecaster %in% params$forecasters)
+# }
 
-if(params$outcome=="deaths"){
+# if(params$outcome=="deaths"){
 url_deaths <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_state_deaths.rds"
 download.file(url_deaths, "eval_deaths.RDS") # download to disk
 scores <- readRDS(paste0(here(), "/eval_deaths.RDS"))
-scores <- subset(scores,  forecaster %in% params$forecasters)
-}
-
-if(params$outcome=="hospitalizations"){
-url_hosp <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_state_hospitalizations.rds"
-download.file(url_hosp, "eval_hospitalizations.RDS") # download to disk
-scores <- readRDS(paste0(here(), "/eval_hospitalizations.RDS"))
-scores <- subset(scores,  forecaster %in% params$forecasters)
-}
+scores <- subset(scores, forecaster %in% params$forecasters)
+# }
 
 primary_forecaster <- params$primary_forecaster
 ```
 
-```{r get-forecast-dates}
+```{r get-forecast-dates, results = FALSE}
 our_pred_dates <- 
   scores %>%
-  filter(forecaster == "COVIDhub-ensemble") 
+  filter(forecaster == "CMU-TimeSeries") 
 
 our_pred_dates <- unique(our_pred_dates$forecast_date) 
 n_dates <- length(our_pred_dates)
@@ -98,7 +90,7 @@ forecast_dates <- our_pred_dates[n_dates- 2 *5:2]
 ```
 
 
-```{r}
+```{r, results = FALSE}
 scores$forecast_date <- 
   if_else(scores$forecaster %in% c("Karlen-pypm", "CU-select"), scores$forecast_date + 1, scores$forecast_date)
 
@@ -112,10 +104,9 @@ results %>%
 
 ```
 
-## Downloading the data
+## Download the data
 
 Retrieving prediction data of the selected forecasters
-
 ```{r download data}
 results %>%
   download_this(
@@ -159,7 +150,8 @@ plot_ae <-
                  y = "ae", 
                  aggr = mean) +
   labs(title = subtitle, x= "Weeks Ahead", y = "Mean AE",color='Forecasters') +  
-  geom_point(aes(text=sprintf("Weeks Ahead: %s<br>Average Error: %s <br>Forecaster: %s", 
+#  geom_line(aes(linetype=forecaster, color=forecaster)) +
+  geom_point(aes(color=forecaster, text=sprintf("Weeks Ahead: %s<br>Average Error: %s <br>Forecaster: %s", 
                               ahead, 
                               round(ae, digits=2),
                               color)),
