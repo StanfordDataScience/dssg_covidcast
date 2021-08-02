@@ -15,11 +15,6 @@ params:
     choices: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm,CU-select, Google_Harvard-CPF, MIT-Cassandra, COVIDhub-trained_ensemble]
     value: COVIDhub-ensemble
     input: select
-  outcome:
-    label: "Outcome:"
-    choices: [cases, deaths, hospitalizations]
-    value: deaths
-    input: select
   colorblind_palette: TRUE
   weeks: 
     label: "Weeks"
@@ -136,6 +131,7 @@ results %>%
 NOTE: Results are based on the following numbers of common locations
 
 ### Overall Absolute Error
+By Weeks Ahead
 ```{r overall ae}
 weeks.label = c("1 week ahead", "2 weeks ahead", "3 weeks ahead", "4 weeks ahead")
 names(weeks.label) = c(1, 2, 3, 4)
@@ -171,6 +167,7 @@ ggplotly(plot_ae, tooltip="text", width=1000) %>%
 ```
 
 ### Overall Weighted Interval Score
+By Forecast Dates
 ``` {r overall wis}
 plot_wis <-
   plot_canonical(results, 
@@ -204,6 +201,7 @@ ggplotly(plot_wis, tooltip="text", height=800, width= 1000) %>%
 ```
 
 ### Overall Coverage 80
+By Forecast Dates
 ``` {r overall coverage80}
 plot_cov80 <-
   plot_canonical(results, 
@@ -233,10 +231,13 @@ ggplotly(plot_cov80, tooltip="text", height=800, width=1000) %>%
   layout(hoverlabel = list(bgcolor = "white"))
 ```
 
-## (Geometric) Mean relative WIS 
+## Mean Geometric Relative WIS {.tabset}
 
 Relative to baseline; scale first then take the geometric mean, ignoring a few 
 0's.
+
+### By Weeks Ahead
+
 ```{r, message = FALSE, warning = FALSE}
 geom_mean <- function(x) prod(x)^(1/length(x))
 #geom_mean <- exp(mean(log((x+1)/(y+1)))) #still need to figure this out
@@ -269,7 +270,11 @@ if (params$colorblind_palette) {
 
 ggplotly(mean_wis, tooltip="text", width= 1000) %>% 
   layout(hoverlabel = list(bgcolor = "white"))
+```
 
+### By Forecast Dates
+
+```{r}
 mean_wis_forecast_date <- 
 plot_canonical(results %>% 
                  filter(wis > 0), 
