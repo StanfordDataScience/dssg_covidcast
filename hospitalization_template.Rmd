@@ -7,7 +7,7 @@ params:
   forecasters:
     label: "Forecasters:"
     choices: [Covid19Sim-Simulator, CovidActNow-SEIR_CAN, COVIDhub-ensemble, COVIDhub-trained_ensemble, CU-select, Google_Harvard-CPF, GT-DeepCOVID, IHME-CurveFit, JHU_IDD-CovidSP, JHUAPL-Bucky, JHUAPL-Gecko, JHUAPL-SLPHospEns, Karlen-pypm, LANL-GrowthRate, MOBS-GLEAM_COVID, UCLA-SuEIR, UCSB-ACTS, USACE-ERDC_SEIR, USC-SI_kJalpha]
-    value: [Covid19Sim-Simulator, COVIDhub-ensemble, COVIDhub-trained_ensemble, CU-select, Google_Harvard-CPF, JHU_IDD-CovidSP, Karlen-pypm]
+    value: [Covid19Sim-Simulator, COVIDhub-ensemble, COVIDhub-trained_ensemble, CU-select, JHU_IDD-CovidSP, Karlen-pypm]
     input: select
     multiple: TRUE
   primary_forecaster:
@@ -51,17 +51,15 @@ library(plotly)
 library(here)
 ```
 
-```{r}
+```{r, results = FALSE}
 aheads  <- as.numeric(params$weeks)
-
 url_hosp <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_state_hospitalizations.rds"
 download.file(url_hosp, "eval_hospitalizations.RDS") # download to disk
 scores1 <- readRDS(paste0(here(), "/eval_hospitalizations.RDS"))
-#unique(scores$forecaster)
 scores <- subset(scores1,  forecaster %in% params$forecasters)
 ```
 
-```{r get-forecast-dates}
+```{r get-forecast-dates, results = FALSE}
 our_pred_dates <- 
   scores %>%
   filter(forecaster == "COVIDhub-ensemble") 
@@ -75,8 +73,7 @@ forecast_dates <- our_pred_dates[n_dates- 2 *5:2]
 ```
 
 
-```{r}
-unique(scores$forecaster)
+```{r,results = FALSE}
 scores %>%
   filter(forecaster =="Karlen-pypm")
 
@@ -91,8 +88,6 @@ results <-
 results %>%
   group_by(forecast_date) %>%
   summarise(n_distinct(geo_value))
-
-unique(results$forecaster)
 ```
 
 ## Downloading the data
@@ -112,9 +107,11 @@ results %>%
   )
 ```
 
-## Overall AE, WIS, Coverage 80
+## Overall AE, WIS, Coverage 80 {.tabset}
 NOTE: Results are based on the following numbers of common locations
 
+### Overall Absolute Error
+By Weeks Ahead
 ```{r overall, height=800, width= 1000}
 weeks.label = c("1 week ahead", "2 weeks ahead", "3 weeks ahead", "4 weeks ahead")
 names(weeks.label) = c(1, 2, 3, 4)
@@ -145,7 +142,11 @@ if (params$colorblind_palette) {
 
 ggplotly(plot_ae, tooltip="text", width=1000) %>% 
   layout(hoverlabel = list(bgcolor = "white"))
+```
 
+### Overall Weighted Interval Score
+By Forecast Dates
+``` {r}
 plot_wis <-
   plot_canonical(results, 
                  x = "forecast_date", 
@@ -175,7 +176,12 @@ if (params$colorblind_palette) {
 
 ggplotly(plot_wis, tooltip="text", height=800, width= 1000) %>% 
   layout(hoverlabel = list(bgcolor = "white"))
+```
 
+### Overall Coverage 80
+
+By Forecast Dates
+```{r}
 plot_cov80 <-
   plot_canonical(results, 
                  x = "forecast_date", 
@@ -204,12 +210,11 @@ ggplotly(plot_cov80, tooltip="text", height=800, width=1000) %>%
   layout(hoverlabel = list(bgcolor = "white"))
 ```
 
+## Geometric mean relative WIS {.tabset}
 
-## (Geometric) Mean relative WIS 
+### By Weeks Ahead
 
-The plots are created based on COVIDhub-ensemble forecaster as the base forecaster. 
-Relative to baseline; scale first then take the geometric mean, ignoring a few 0's.
-```{r,height=800, width= 1000, message = FALSE, warning = FALSE}
+```{r by ahead,height=800, width= 1000, message = FALSE, warning = FALSE}
 geom_mean <- function(x) prod(x)^(1/length(x))
 #geom_mean <- exp(mean(log((x+1)/(y+1)))) #still need to figure this out
 
@@ -241,6 +246,11 @@ if (params$colorblind_palette) {
 
 ggplotly(mean_wis, tooltip="text", width= 1000) %>% 
   layout(hoverlabel = list(bgcolor = "white"))
+```
+
+### By Forecast Date
+
+```{r by date,height=800, width= 1000, message = FALSE, warning = FALSE}
 
 mean_wis_forecast_date <- 
 plot_canonical(results %>% 
@@ -305,7 +315,7 @@ ggplotly(mean_wis_forecast_date, tooltip = "text", height=800, width= 1000) %>%
 # ggplotly(target_wis_ahead, tooltip="text", height=800, width= 1000) %>% layout(hoverlabel=list(bgcolor='white'))
 ```
 
-## Maps (mean score over forecast dates and aheads)
+## Maps {.tabset}
 
 Note that the results are scaled by population.
 
