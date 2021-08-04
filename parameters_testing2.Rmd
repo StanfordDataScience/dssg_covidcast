@@ -1,5 +1,9 @@
 ---
-title: Parameterized report w/ AWS 
+title: Evaluation of COVID Forecasters 
+subtitle: Parametrized Report
+date: "`r format(Sys.time(), '%d %B %Y')`"
+abstract: |
+  This notebook is a template for evaluating your forecaster against submissions from COVIDhub. After inputting a set of parameters (forecasters, COVID signals, etc), the templates yields a comprehensive report on the predictions of COVID forecasters as well as their performance compared to the ground truth.
 output: 
   html_document:
     code_folding: hide
@@ -27,8 +31,10 @@ editor_options:
   chunk_output_type: inline
 ---
 
-**Package installation**
+
 ```{r common-stuff, echo=FALSE, message=FALSE, warning=FALSE}
+
+# Package installation
 knitr::opts_chunk$set(autodep = TRUE, fig.align = "center", message = FALSE, warning = FALSE, echo=params$printcode)
 library(covidcast)
 library(evalcast)
@@ -49,6 +55,10 @@ library(ggplot2)
 library(plotly)
 library(here)
 ```
+
+## Retrieving Forecast Data
+Every week, forecasters submit their predictions to COVID-19 ForecastHub. An AWS bucket that contains the estimates of a handful of signals (e.g., COVID death, cases, hospitalization, etc). Furthermore, the AWS server stores an array of evaluation metrics of these forecasts (e.g., Absolute Error, Weighted Interval Score).
+Alternatively, the data can be retrieved from `r covidcast` and `r covideval` APIs.
 
 ```{r, results = FALSE}
 aheads  <- as.numeric(params$weeks)
@@ -79,11 +89,8 @@ our_pred_dates <-
 our_pred_dates <- unique(our_pred_dates$forecast_date) 
 n_dates <- length(our_pred_dates)
 
-# n_dates - 4 is often the most recent date with ground truth for 4 weeks ahead
-# dates spaced out 2 weeks ahead to see different behaviors
 forecast_dates <- our_pred_dates[n_dates- 2 *5:2]
 ```
-
 
 ```{r, results = FALSE}
 scores$forecast_date <- 
@@ -100,8 +107,8 @@ results %>%
 ```
 
 ## Download the data
+To prompt the flexibility to replicate the report, the data used in this report can be easily downloaded as a CSV file. By doing so, the user can generate customized plots or even include their own forecaster.
 
-Retrieving prediction data of the selected forecasters
 ```{r download data}
 results %>%
   download_this(
@@ -395,7 +402,7 @@ cowplot::plot_grid(plotlist = maps[((nfcasts*2)+1):length(maps)], ncol = 3)
 For county predictions, you might want to change the `fig.height` and `fig.width` chunk options here (in other notebooks we use `fig.height = 120` and `fig.width = 30`).
 
 ```{r get_predictions}
-options(timeout=200)
+options(timeout=300)
 url4 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/predictions_cards.rds"
 download.file(url4, "predictions.RDS") # download to disk
 state_predictions <- readRDS(paste0(here(), "/predictions.RDS"))
