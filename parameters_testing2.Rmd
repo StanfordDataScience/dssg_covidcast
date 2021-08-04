@@ -30,8 +30,7 @@ params:
 editor_options: 
   chunk_output_type: inline
 ---
-
-
+$$\\[1in]$$
 ```{r common-stuff, echo=FALSE, message=FALSE, warning=FALSE}
 
 # Package installation
@@ -58,7 +57,8 @@ library(here)
 
 ## Retrieving Forecast Data
 Every week, forecasters submit their predictions to COVID-19 ForecastHub. An AWS bucket that contains the estimates of a handful of signals (e.g., COVID death, cases, hospitalization, etc). Furthermore, the AWS server stores an array of evaluation metrics of these forecasts (e.g., Absolute Error, Weighted Interval Score).
-Alternatively, the data can be retrieved from `r covidcast` and `r covideval` APIs.
+Alternatively, the data can be retrieved from `covidcast` and `covideval` APIs.
+To promote the flexibility to replicate the report, the data used in this report can be easily downloaded as a CSV file. By doing so, the user can generate customized plots or even include their own forecaster.
 
 ```{r, results = FALSE}
 aheads  <- as.numeric(params$weeks)
@@ -84,7 +84,7 @@ primary_forecaster <- params$primary_forecaster
 ```{r get-forecast-dates, results = FALSE}
 our_pred_dates <- 
   scores %>%
-  filter(forecaster == "CMU-TimeSeries") 
+  filter(forecaster == "CMU-TimeSeries")
 
 our_pred_dates <- unique(our_pred_dates$forecast_date) 
 n_dates <- length(our_pred_dates)
@@ -105,9 +105,6 @@ results %>%
   summarise(n_distinct(geo_value))
 
 ```
-
-## Download the data
-To prompt the flexibility to replicate the report, the data used in this report can be easily downloaded as a CSV file. By doing so, the user can generate customized plots or even include their own forecaster.
 
 ```{r download data}
 results %>%
