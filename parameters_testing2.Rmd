@@ -30,7 +30,7 @@ params:
 editor_options: 
   chunk_output_type: inline
 ---
-$$\\[1in]$$
+$$\\[.5in]$$
 ```{r common-stuff, echo=FALSE, message=FALSE, warning=FALSE}
 
 # Package installation
@@ -38,14 +38,10 @@ knitr::opts_chunk$set(autodep = TRUE, fig.align = "center", message = FALSE, war
 library(covidcast)
 library(evalcast)
 library(modeltools)
-#library(quantgen)
 library(tidyverse)
 library(zookeeper)
 library(namespace)
-#library(devtools)
-#library(usethis)
 library(downloadthis)
-library(assertthat)  # needed for this particular forecaster
 library(sf)
 library(Cairo)
 library(tidyverse)
@@ -53,11 +49,16 @@ library(viridis)
 library(ggplot2)
 library(plotly)
 library(here)
+
+#library(quantgen)
+#library(devtools)
+#library(usethis)
 ```
 
 ## Retrieving Forecast Data
 Every week, forecasters submit their predictions to COVID-19 ForecastHub. An AWS bucket that contains the estimates of a handful of signals (e.g., COVID death, cases, hospitalization, etc). Furthermore, the AWS server stores an array of evaluation metrics of these forecasts (e.g., Absolute Error, Weighted Interval Score).
 Alternatively, the data can be retrieved from `covidcast` and `covideval` APIs.
+
 To promote the flexibility to replicate the report, the data used in this report can be easily downloaded as a CSV file. By doing so, the user can generate customized plots or even include their own forecaster.
 
 ```{r, results = FALSE}
@@ -396,19 +397,12 @@ cowplot::plot_grid(plotlist = maps[((nfcasts*2)+1):length(maps)], ncol = 3)
 
 ## Trajectory plots
 
-For county predictions, you might want to change the `fig.height` and `fig.width` chunk options here (in other notebooks we use `fig.height = 120` and `fig.width = 30`).
-
 ```{r get_predictions}
 options(timeout=300)
 url4 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/predictions_cards.rds"
 download.file(url4, "predictions.RDS") # download to disk
 state_predictions <- readRDS(paste0(here(), "/predictions.RDS"))
-
-
-# Check how many aheads in the state_predictions data
-# Check the forecast_end_date column
 ```
-
 
 ```{r}
 # for county prediction, set geo_type = "county"
@@ -451,7 +445,6 @@ g <- g +
              size = 1) +
   scale_color_viridis_d(begin=.15, end=.85)
 ```
-
 
 ```{r state trajectories, fig.height = 60, fig.width = 20, dev="CairoSVG"}
 states <- g  +
