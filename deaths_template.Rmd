@@ -1,5 +1,5 @@
 ---
-title: Evaluation of COVID Forecasters 
+title: Evaluation of COVID-19 Forecasters 
 subtitle: Parametrized Report
 date: "`r format(Sys.time(), '%d %B %Y')`"
 abstract: |
@@ -17,7 +17,7 @@ params:
   primary_forecaster:
     label: "Primary forecaster:"
     choices: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm,CU-select, Google_Harvard-CPF, MIT-Cassandra, COVIDhub-trained_ensemble]
-    value: COVIDhub-ensemble
+    value: CMU-TimeSeries
     input: select
   colorblind_palette: TRUE
   weeks: 
@@ -57,11 +57,12 @@ Every week, forecasters submit their predictions to COVID-19 ForecastHub. In thi
 
 ```{r, results = 'asis'}
 aheads  <- as.numeric(params$weeks)
+primary_forecaster <- params$primary_forecaster
+
 url_deaths <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_state_deaths.rds"
 download.file(url_deaths, "eval_deaths.RDS") # download to disk
 scores <- readRDS(paste0(here(), "/eval_deaths.RDS"))
 scores <- subset(scores, forecaster %in% params$forecasters)
-primary_forecaster <- params$primary_forecaster
 
 our_pred_dates <- 
   scores %>%
@@ -226,8 +227,11 @@ if (params$colorblind_palette) {
     scale_color_viridis_d()
 }
 
-ggplotly(plot_cov80, tooltip="text", height=800, width=1000) %>% 
-  layout(hoverlabel = list(bgcolor = "white"))
+plot_cov80 <- ggplotly(plot_cov80, tooltip="text", height=800, width=1000) 
+
+#adjust y-axis label
+plot_cov80[['x']][['layout']][['annotations']][[2]][['x']] <- -0.05
+plot_cov80 %>% layout(margin = list(l = 75), hoverlabel = list(bgcolor = "white"))
 ```
 
 ### Mean Geometric Relative WIS {.tabset}
@@ -266,9 +270,11 @@ if (params$colorblind_palette) {
   mean_wis <- mean_wis + 
     scale_color_viridis_d()
 }
+mean_wis <- ggplotly(mean_wis, tooltip="text", width= 1000)
 
-ggplotly(mean_wis, tooltip="text", width= 1000) %>% 
-  layout(hoverlabel = list(bgcolor = "white"))
+#adjust y-axis label
+mean_wis[['x']][['layout']][['annotations']][[2]][['x']] <- -0.05
+mean_wis%>% layout(margin = list(l = 75), hoverlabel = list(bgcolor = "white"))
 ```
 
 #### By Forecast Dates
@@ -304,9 +310,11 @@ if (params$colorblind_palette) {
   mean_wis_forecast_date <- mean_wis_forecast_date + 
     scale_color_viridis_d()
 }
+mean_wis_forecast_date<- ggplotly(mean_wis_forecast_date, tooltip = "text", height=800, width= 1000)
 
-ggplotly(mean_wis_forecast_date, tooltip = "text", height=800, width= 1000) %>% 
-  layout(hoverlabel = list(bgcolor = "white"))
+#adjust y-axis label
+mean_wis_forecast_date[['x']][['layout']][['annotations']][[2]][['x']] <- -0.05
+mean_wis_forecast_date %>% layout(margin = list(l = 75), hoverlabel = list(bgcolor = "white"))
 ```
 
 ```{r, message = FALSE, warning = FALSE, include = FALSE}
@@ -411,7 +419,7 @@ names(state.label) = c(tolower(state.abb), "dc", "pr")
 
 # trajectory plots for selected forecaster
 pd <- evalcast:::setup_plot_trajectory(
-  state_predictions %>% filter(forecaster=="CMU-TimeSeries" & forecast_date %in% forecast_dates),
+  state_predictions %>% filter(forecaster==primary_forecaster & forecast_date %in% forecast_dates),
   intervals = 0.8,
   geo_type = "state",
   start_day = min(forecast_dates) - 60)

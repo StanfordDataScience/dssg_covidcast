@@ -1,0 +1,33 @@
+---
+title: "Final Project Report"
+date: "August, 2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+*By Stanford Data Science for Social Good (DSSG) Fellows:* Taha Bouhoun, Michelle Lee
+*Technical Mentor:* Shilaan Alzahawi
+*Faculty Mentors:* Balasubramanian Narasimhan, Daniel McDonald
+*Partnering with:* DELPHI Research Group at Carnegie Mellon University
+
+// add images for fellows + mentors //
+// add logos for delphi + dssg //
+
+## Covidcast: Forecasting Aids for DELPHI
+
+### 1.1 Summary
+### 1.2 Introduction
+### 1.3 About DELPHI Research Group
+
+The DELPHI Research Group is based at Carnegie Mellon University and is one of the two influenza forecasters in the United States. The group’s goal is to develop the theory and practice of epidemiological forecasting, with a long-term vision of making this technology as universally accepted and useful as weather forecasting is today. Prior to COVID-19, the group also worked on forecasting for influenza, dengue, and norovirus. More information on the research group can be found on its [website](https://delphi.cmu.edu/)
+
+### 1.4 About DELPHI Covidcast 
+
+Since March 2020, the DELPHI research group has maintained the largest public repository of real-time indicators of COVID-19 activity, publicly available through an API. Every Sunday, the DELPHI Covidcast generates forecasts of cumulative COVID-19 cases and deaths in the U.S. Every Monday, a team reviews these predictions, after which they are submitted to [COVID-19 ForecastHub](https://covid19forecasthub.org/). The forecast hub maintains up-to-date record for forecasts of COVID-19 cases, deaths and hospitalizations in the US, created by dozens of leading infectious disease modeling teams from around the globe, in coordination with the US CDC.
+
+### 1.5 Our Contribution
+
+### 2.1 Methodology and Pipeline
+### 2.2 Data Source
