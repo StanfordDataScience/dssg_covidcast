@@ -391,6 +391,8 @@ cowplot::plot_grid(plotlist = maps[((nfcasts*2)+1):length(maps)], ncol = 3)
 
 ### Trajectory plots
 
+The following plots show the predictions of the **`r primary_forecaster`** forecaster along with the confidence interval for each of the US states. The forecasts project `r aheads` weeks ahead.
+
 ```{r get_predictions}
 options(timeout=300)
 url4 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/predictions_cards.rds"
