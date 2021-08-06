@@ -66,10 +66,11 @@ our_pred_dates <-
   scores %>%
   filter(forecaster == primary_forecaster) 
 
-our_pred_dates <- unique(our_pred_dates$forecast_date) 
-n_dates <- length(our_pred_dates)
+our_pred_dates <- unique(our_pred_dates$forecast_date)
+# n_dates <- length(our_pred_dates)
+# forecast_dates <- our_pred_dates[n_dates- 2 *5:2]
+forecast_dates <- our_pred_dates
 
-forecast_dates <- our_pred_dates[n_dates- 2 *5:2]
 
 scores$forecast_date <- 
   if_else(scores$forecaster %in% c("Karlen-pypm", "CU-select"), scores$forecast_date + 1, scores$forecast_date)
