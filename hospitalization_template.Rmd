@@ -64,18 +64,19 @@ download.file(url_hosp, "eval_hospitalizations.RDS") # download to disk
 scores1 <- readRDS(paste0(here(), "/eval_hospitalizations.RDS"))
 scores <- subset(scores1,  forecaster %in% params$forecasters)
 
-our_pred_dates <- 
+our_pred_dates <-
   scores %>%
-  filter(forecaster == "COVIDhub-ensemble") 
+  filter(forecaster == "COVIDhub-ensemble")
 
-our_pred_dates <- unique(our_pred_dates$forecast_date) 
-n_dates <- length(our_pred_dates)
-forecast_dates <- our_pred_dates[n_dates- 2 *5:2]
+our_pred_dates <- unique(our_pred_dates$forecast_date)
+# n_dates <- length(our_pred_dates)
+# forecast_dates <- our_pred_dates[n_dates- 2 *5:2]
+forecast_dates <- our_pred_dates
 
-scores$forecast_date <- 
+scores$forecast_date <-
   if_else(scores$forecaster %in% c("Karlen-pypm", "CU-select","Covid19Sim-Simulator","JHU_IDD-CovidSP"), scores$forecast_date + 1, scores$forecast_date)
 
-scores <- subset(scores, forecast_date %in% forecast_dates & ahead <= aheads)
+scores <- subset(scores, ahead <= aheads)
 results <- 
   scores %>% 
   select(c("ahead", "geo_value", "forecaster","forecast_date", "data_source", "signal","target_end_date","incidence_period","actual","wis","ae","cov_80"))
@@ -242,16 +243,15 @@ Relative to baseline; scale first then take the geometric mean, ignoring a few
 
 ```{r, message = FALSE, warning = FALSE}
 geom_mean <- function(x) prod(x)^(1/length(x))
+#geom_mean <- function(x) exp(1/length(x)(sum(log(x))))
 #geom_mean <- exp(mean(log((x+1)/(y+1)))) #still need to figure this out
 
 mean_wis <- 
-  plot_canonical(results %>% 
-                   filter(wis > 0), 
-                 x = "ahead", 
+  plot_canonical(results, x = "ahead", 
                  y = "wis", 
-                 aggr = geom_mean,
-                 base_forecaster = "COVIDhub-trained_ensemble", 
-                 scale_before_aggr = TRUE) + 
+                 aggr = geom_mean) +
+                 #base_forecaster = "COVIDhub-trained_ensemble"
+                 #scale_before_aggr = TRUE) + 
   labs(title = subtitle, 
        x = "Weeks Ahead", 
        y = "Geometric mean relative WIS", 
@@ -286,9 +286,9 @@ plot_canonical(results %>%
                y = "wis", 
                aggr = geom_mean, 
                facet_rows = "ahead",
-               grp_vars = c("forecaster", "ahead"),
-               base_forecaster = "COVIDhub-ensemble", 
-               scale_before_aggr = TRUE) +
+               grp_vars = c("forecaster", "ahead")) +
+               #base_forecaster = "COVIDhub-ensemble", 
+               #scale_before_aggr = TRUE) +
   theme(legend.position = "bottom") + 
   labs(title = subtitle, 
        x = "Forecast date", 
