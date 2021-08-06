@@ -104,6 +104,16 @@ results %>%
     csv2 = FALSE,
     icon = "fa fa-save"
   )
+
+download_link(
+  link = "https://forecast-eval.s3.us-east-2.amazonaws.com/predictions_cards.rds",
+  button_label = "Download Raw Predictions",
+  button_type = "success",
+  has_icon = TRUE,
+  csv2 = FALSE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
 ```
 $$\\[.07in]$$
 <!-- ```{r evaluate-predictions, messages=F, warning=F} -->
@@ -402,22 +412,9 @@ Coverage is estimated on a particular date by computing the proportion of locati
 cowplot::plot_grid(plotlist = maps[(nfcasts+1):(nfcasts*2)], ncol = 3)
 ```
 
-### Trajectory plots
+### Trajectory plots {.tabset}
 
 The following plots show the predictions of the **`r primary_forecaster`** forecaster along with the confidence interval for each of the US states. The forecasts project `r aheads` weeks ahead.
-
-```{r download_predictions}
-
-download_link(
-  link = "https://forecast-eval.s3.us-east-2.amazonaws.com/predictions_cards.rds",
-  button_label = "Download Raw Predictions",
-  button_type = "success",
-  has_icon = TRUE,
-  csv2 = FALSE,
-  icon = "fa fa-save",
-  self_contained = FALSE
-)
-```
 
 ```{r get_predictions}
 options(timeout=300)
@@ -425,13 +422,25 @@ url4 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/predictions_cards.rds"
 download.file(url4, "predictions.RDS") # download to disk
 state_predictions <- readRDS(paste0(here(), "/predictions.RDS"))
 
+state_predictions <- state_predictions %>% 
+  filter(forecaster==primary_forecaster & forecast_date %in% forecast_dates)
+
 # for county prediction, set geo_type = "county"
 state.label = c(state.name, "Washington D.C.", "Porto Rico")
 names(state.label) = c(tolower(state.abb), "dc", "pr")
 
-# trajectory plots for selected forecaster
+south <- c(tolower(state.abb)[state.region=="South"], "pr")
+west <- tolower(state.abb)[state.region=="West"]
+northeast <- c(tolower(state.abb)[state.region=="Northeast"], "dc")
+northcentral <- tolower(state.abb)[state.region=="North Central"]
+
+state_predictions_south <- state_predictions %>% 
+  filter(geo_value %in% south)
+
+trajectory_plot <- function(region) {
+  # trajectory plots for selected forecaster
 pd <- evalcast:::setup_plot_trajectory(
-  state_predictions %>% filter(forecaster==primary_forecaster & forecast_date %in% forecast_dates),
+  state_predictions %>% filter(geo_value %in% region),
   intervals = 0.8,
   geo_type = "state",
   start_day = min(forecast_dates) - 60)
@@ -459,7 +468,7 @@ g <- g +
                           group = interaction(forecaster, forecast_date)),
             size = .5) +
   geom_point(aes(y = value), size = 1) + # reported gets dots
-  geom_point(data = pd$points_df %>% 
+  geom_point(data = pd$points_df %>%
                mutate(value = round(value, 2)),
              mapping = aes(y = value, color = forecaster),
              size = 1) +
@@ -469,11 +478,36 @@ g <- g +
 states <- g  +
   facet_wrap(~geo_value,
              scales = "free_y",
-             ncol = 3,
+             ncol = 2,
              labeller = labeller(geo_value = state.label)) +
   labs(x = "", y = "") +
   theme_bw() +
   theme(legend.position = "none", strip.background = element_rect(fill = "white"))
 
-ggplotly(states, height=5000, width= 1000)
+ggplotly(states, height=2000, width= 1000)
+}
+```
+
+#### South 
+
+```{r}
+trajectory_plot(south)
+```
+
+#### West
+
+```{r}
+trajectory_plot(west)
+```
+
+#### Northeast
+
+```{r}
+trajectory_plot(northeast)
+```
+
+#### North Central
+
+```{r}
+trajectory_plot(northcentral)
 ```
