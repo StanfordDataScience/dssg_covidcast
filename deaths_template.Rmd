@@ -406,12 +406,24 @@ cowplot::plot_grid(plotlist = maps[(nfcasts+1):(nfcasts*2)], ncol = 3)
 
 The following plots show the predictions of the **`r primary_forecaster`** forecaster along with the confidence interval for each of the US states. The forecasts project `r aheads` weeks ahead.
 
+```{r download_predictions}
+
+download_link(
+  link = "https://forecast-eval.s3.us-east-2.amazonaws.com/predictions_cards.rds",
+  button_label = "Download Raw Predictions",
+  button_type = "success",
+  has_icon = TRUE,
+  csv2 = FALSE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
+```
+
 ```{r get_predictions}
 options(timeout=300)
 url4 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/predictions_cards.rds"
 download.file(url4, "predictions.RDS") # download to disk
 state_predictions <- readRDS(paste0(here(), "/predictions.RDS"))
-
 
 # for county prediction, set geo_type = "county"
 state.label = c(state.name, "Washington D.C.", "Porto Rico")
@@ -447,7 +459,7 @@ g <- g +
                           group = interaction(forecaster, forecast_date)),
             size = .5) +
   geom_point(aes(y = value), size = 1) + # reported gets dots
-  geom_point(data = pd$points_df %>%
+  geom_point(data = pd$points_df %>% 
                mutate(value = round(value, 2)),
              mapping = aes(y = value, color = forecaster),
              size = 1) +
