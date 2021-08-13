@@ -11,7 +11,7 @@ params:
   forecasters:
     label: "Forecasters:"
     choices: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm,CU-select, Google_Harvard-CPF, MIT-Cassandra, COVIDhub-trained_ensemble]
-    value: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm, CU-select, MIT-Cassandra, COVIDhub-trained_ensemble]
+    value: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm, CU-select, COVIDhub-trained_ensemble]
     input: select
     multiple: TRUE
   primary_forecaster:
@@ -60,7 +60,7 @@ primary_forecaster <- params$primary_forecaster
 
 url_deaths <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_state_deaths.rds"
 download.file(url_deaths, "eval_deaths.RDS") # download to disk
-scores <- readRDS(paste0(here(), "/eval_deaths.RDS"))
+scores <- readRDS(paste0(here(), "/R/eval_deaths.RDS"))
 scores <- subset(scores, forecaster %in% params$forecasters)
 
 our_pred_dates <-
@@ -74,7 +74,7 @@ forecast_dates <- our_pred_dates
 
 scores$forecast_date <- if_else(scores$forecaster %in% c("Karlen-pypm", "CU-select"), scores$forecast_date + 1, scores$forecast_date)
 
-# scores <- subset(scores, ahead <= aheads)
+scores <- subset(scores, ahead <= aheads)
 results <- intersect_averagers(scores, c("forecaster"), c("forecast_date", "geo_value")) %>%
   select(c("ahead", "geo_value", "forecaster","forecast_date", "data_source", "signal","target_end_date","incidence_period","actual","wis","ae","cov_80"))
 
@@ -419,7 +419,7 @@ The following plots show the predictions of the **`r primary_forecaster`** forec
 options(timeout=300)
 url4 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/predictions_cards.rds"
 download.file(url4, "predictions.RDS") # download to disk
-state_predictions <- readRDS(file.path(here(),"predictions.RDS"))
+state_predictions <- readRDS(paste0(here(), "/R/predictions.RDS"))
 
 state_predictions <- state_predictions %>% 
   filter(forecaster==primary_forecaster & forecast_date %in% forecast_dates)
@@ -444,27 +444,6 @@ pd <- evalcast:::setup_plot_trajectory(
   geo_type = "state",
   start_day = min(forecast_dates) - 60)
 
-sub_scores = 
-  scores %>%
- filter(forecaster==primary_forecaster & forecast_date %in% forecast_dates)
-
-actual1 = 
-  sub_scores %>%
-  select(c("geo_value", "target_end_date", "actual")) 
-#%>%  arrange(target_end_date)
-
-actual2=
-  sub_scores %>%
-  select(c("geo_value", "forecaster", "forecast_date", "target_end_date","actual"))
-
-actual3=
-  sub_scores %>%
-  arrange(forecast_date)
-
-  select(c("geo_value", "forecaster", "forecast_date", "target_end_date", ))
-```
-
-```{r}
 g <- ggplot(pd$truth_df, mapping = aes(x = target_end_date))
 # build the fan
 g <- g + geom_ribbon(

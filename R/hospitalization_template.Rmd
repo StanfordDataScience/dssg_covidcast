@@ -61,7 +61,7 @@ primary_forecaster <- params$primary_forecaster
 
 url_hosp <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_state_hospitalizations.rds"
 download.file(url_hosp, "eval_hospitalizations.RDS") # download to disk
-scores1 <- readRDS(paste0(here(), "/eval_hospitalizations.RDS"))
+scores1 <- readRDS(paste0(here(), "/R/eval_hospitalizations.RDS"))
 scores <- subset(scores1,  forecaster %in% params$forecasters)
 
 our_pred_dates <-
