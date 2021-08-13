@@ -6,3 +6,4 @@ eval_deaths.RDS
 predictions.RDS
 eval_hospitalizations.RDS
 eval_cases.RDS
+.DS_Store
