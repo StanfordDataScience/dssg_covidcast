@@ -48,7 +48,7 @@ More information on data sources can be found on the [COVIDcast Epidata API webs
 To promote the flexibility to replicate the report, the data used in this report can be easily downloaded as a CSV file using the ‘download’ button in the report. By doing so, the user can generate customized plots or even include their own forecaster.
 
  ### Fellows & Mentors
-* **[Taha Bouhoun](https://github.com/Tahahaha7)** recently graduated with Computational Sciences from Minerva University. 
+* **[Taha Bouhoun](https://github.com/Tahahaha7)** recently graduated with a Bachelor's in Computational Sciences from Minerva University. 
 * **[Michelle Lee](https://mjl2241.github.io/hi/)** recently graduated with a Master’s in Public Health (Population Health & Biostatistics) from Columbia University and can be reached at mjl2241@columbia.edu.
 * **[Shilaan Alzahawi](https://shilaan.rbind.io)** is a PhD student in Organizational Behavior at Stanford University Graduate School of Business. Shilaan was the technical mentor for this project.
 * **Balasubramanian Narasimhan** (Stanford University) and **Daniel McDonald** (University of British Columbia, Canada) were the faculty mentors on this project. 
