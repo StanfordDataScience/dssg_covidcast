@@ -14,18 +14,13 @@ params:
     value: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm, CU-select, COVIDhub-trained_ensemble]
     input: select
     multiple: TRUE
-  primary_forecaster:
-    label: "Primary forecaster:"
-    choices: [COVIDhub-ensemble, COVIDhub-baseline, CMU-TimeSeries, Karlen-pypm,CU-select, Google_Harvard-CPF, MIT-Cassandra, COVIDhub-trained_ensemble]
-    value: CMU-TimeSeries
-    input: select
-  colorblind_palette: TRUE
   weeks: 
     label: "Weeks"
     value: [1,2,3,4]
     input: select
     choices: [1,2,3,4]
     multiple: True
+  colorblind_palette: TRUE
   printcode: TRUE
 editor_options: 
   chunk_output_type: inline
@@ -56,7 +51,6 @@ Every week, forecasters submit their predictions to COVID-19 ForecastHub. In thi
 
 ```{r, results = 'asis'}
 aheads  <- as.numeric(params$weeks)
-primary_forecaster <- params$primary_forecaster
 
 url_deaths <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_state_deaths.rds"
 download.file(url_deaths, "eval_deaths.RDS") # download to disk
@@ -68,9 +62,10 @@ our_pred_dates <-
   filter(forecaster == "CMU-TimeSeries")
 
 our_pred_dates <- unique(our_pred_dates$forecast_date)
+forecast_dates <- our_pred_dates
+# If, subsetting dates:
 # n_dates <- length(our_pred_dates)
 # forecast_dates <- our_pred_dates[n_dates- 2 *5:2]
-forecast_dates <- our_pred_dates
 
 scores$forecast_date <- if_else(scores$forecaster %in% c("Karlen-pypm", "CU-select"), scores$forecast_date + 1, scores$forecast_date)
 
@@ -78,18 +73,12 @@ scores <- subset(scores, ahead <= aheads)
 results <- intersect_averagers(scores, c("forecaster"), c("forecast_date", "geo_value")) %>%
   select(c("ahead", "geo_value", "forecaster","forecast_date", "data_source", "signal","target_end_date","incidence_period","actual","wis","ae","cov_80"))
 
-# kable(results %>%
-#   group_by(forecast_date) %>%
-#   summarise(n_distinct(geo_value)))
 ```
 
 **The target forecast dates are:** <br/> `r forecast_dates` 
 
 **The template will compile data of the following forecasters:** <br/> `r params$forecasters`. 
 
-**The primary forecaster:** <br/> `r primary_forecaster`
-
-$$\\[.07in]$$
 To promote the flexibility to replicate the report, the data used in this report can be easily downloaded as a CSV file. By doing so, the user can generate customized plots or even include their own forecaster.  
 
 ```{r download data}
@@ -413,7 +402,7 @@ cowplot::plot_grid(plotlist = maps[(nfcasts+1):(nfcasts*2)], ncol = 3)
 
 ### Trajectory plots {.tabset}
 
-The following plots show the predictions of the **`r primary_forecaster`** forecaster along with the confidence interval for each of the US states. The forecasts project `r aheads` weeks ahead.
+The following plots show the predictions of the CMU-timeseries forecaster along with the confidence interval for each of the US states. The forecasts project `r aheads` weeks ahead.
 
 ```{r get_predictions}
 options(timeout=300)
@@ -421,8 +410,12 @@ url4 <- "https://forecast-eval.s3.us-east-2.amazonaws.com/predictions_cards.rds"
 download.file(url4, "predictions.RDS") # download to disk
 state_predictions <- readRDS(paste0(here(), "/R/predictions.RDS"))
 
+#subsetting dates for trajectory plots
+n_dates <- length(our_pred_dates)
+forecast_dates <- our_pred_dates[n_dates- 2 *5:2]
+
 state_predictions <- state_predictions %>% 
-  filter(forecaster==primary_forecaster & forecast_date %in% forecast_dates)
+  filter(forecaster=="CMU-TimeSeries" & forecast_date %in% forecast_dates)
 
 # for county prediction, set geo_type = "county"
 state.label = c(state.name, "Washington D.C.", "Porto Rico")

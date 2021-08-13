@@ -14,21 +14,16 @@ params:
     value: [Covid19Sim-Simulator, COVIDhub-ensemble, COVIDhub-trained_ensemble, CU-select, JHU_IDD-CovidSP, Karlen-pypm]
     input: select
     multiple: TRUE
-  primary_forecaster:
-    label: "Primary forecaster:"
-    choices: [Covid19Sim-Simulator, CovidActNow-SEIR_CAN, COVIDhub-ensemble, COVIDhub-trained_ensemble, CU-select, Google_Harvard-CPF, GT-DeepCOVID, IHME-CurveFit, JHU_IDD-CovidSP, JHUAPL-Bucky, JHUAPL-Gecko, JHUAPL-SLPHospEns, Karlen-pypm, LANL-GrowthRate, MOBS-GLEAM_COVID, UCLA-SuEIR, UCSB-ACTS, USACE-ERDC_SEIR, USC-SI_kJalpha]
-    value: COVIDhub-ensemble
-    input: select  
-  colorblind_palette: TRUE
   weeks: 
     label: "Weeks"
     value: [1,2,3,4]
     input: select
     choices: [1,2,3,4]
     multiple: True
+  colorblind_palette: TRUE
   printcode: TRUE
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 $$\\[.4in]$$
 ```{r common-stuff, echo=FALSE, message=FALSE, warning=FALSE}
@@ -57,7 +52,6 @@ Every week, forecasters submit their hospitalization predictions to COVID-19 For
 
 ```{r, results = 'asis'}
 aheads  <- as.numeric(params$weeks)
-primary_forecaster <- params$primary_forecaster
 
 url_hosp <- "https://forecast-eval.s3.us-east-2.amazonaws.com/score_cards_state_hospitalizations.rds"
 download.file(url_hosp, "eval_hospitalizations.RDS") # download to disk
@@ -69,9 +63,10 @@ our_pred_dates <-
   filter(forecaster == "COVIDhub-ensemble")
 
 our_pred_dates <- unique(our_pred_dates$forecast_date)
+forecast_dates <- our_pred_dates
+# If, subsetting dates:
 # n_dates <- length(our_pred_dates)
 # forecast_dates <- our_pred_dates[n_dates- 2 *5:2]
-forecast_dates <- our_pred_dates
 
 scores$forecast_date <-
   if_else(scores$forecaster %in% c("Karlen-pypm", "CU-select","Covid19Sim-Simulator","JHU_IDD-CovidSP"), scores$forecast_date + 1, scores$forecast_date)
@@ -80,19 +75,12 @@ scores <- subset(scores, ahead <= aheads)
 results <- 
   scores %>% 
   select(c("ahead", "geo_value", "forecaster","forecast_date", "data_source", "signal","target_end_date","incidence_period","actual","wis","ae","cov_80"))
-
-# results %>%
-#   group_by(forecast_date) %>%
-#   summarise(n_distinct(geo_value))
 ```
 
 **The target forecast dates are:** <br/> `r forecast_dates` 
 
 **The template will compile data of the following forecasters:** <br/> `r params$forecasters`. 
 
-**The primary forecaster:** <br/> `r primary_forecaster`
-
-$$\\[.07in]$$
 To promote the flexibility to replicate the report, the data used in this report can be easily downloaded as a CSV file. By doing so, the user can generate customized plots or even include their own forecaster.  
 
 ```{r download data}
@@ -287,8 +275,6 @@ plot_canonical(results %>%
                aggr = geom_mean, 
                facet_rows = "ahead",
                grp_vars = c("forecaster", "ahead")) +
-               #base_forecaster = "COVIDhub-ensemble", 
-               #scale_before_aggr = TRUE) +
   theme(legend.position = "bottom") + 
   labs(title = subtitle, 
        x = "Forecast date", 
