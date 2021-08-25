@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This GitHub repository was completed by a team of fellows as part of Stanford's Data Science for Social Good program in the Summer of 2021, working on a project originated by DELPHI research group at Carnegie Mellon University. The end goal of our project is to develop tools for comparing and evaluating COVID-19 forecasters for deaths, cases, and hospitalizations in the United States, aiming to help epidemiological researchers gain insights into the performance of their forecasts and lead to more accurate forecasting of epidemics in the future. You can read our final report in this directory and view the slides from our final presentation [here](https://github.com/StanfordDataScience/dssg_covidcast/Final_Presentation.pdf).
+This GitHub repository was completed by a team of fellows as part of Stanford's Data Science for Social Good program in the Summer of 2021, working on a project originated by DELPHI research group at Carnegie Mellon University. The end goal of our project is to develop tools for comparing and evaluating COVID-19 forecasters for deaths, cases, and hospitalizations in the United States, aiming to help epidemiological researchers gain insights into the performance of their forecasts and lead to more accurate forecasting of epidemics in the future. You can read our final report in this directory and view the slides from our final presentation [here](https://github.com/StanfordDataScience/dssg_covidcast/raw/main/Final_Presentation.pdf)
 
 Our outputs are: 
 1. An interactive parameterized report that evaluates and compares the performance (Average Error, Mean Weighted Interval Score, 80% Coverage) of several COVID-19 forecasters for cases, deaths, and hospitalizations.
